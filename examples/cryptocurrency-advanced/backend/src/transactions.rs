@@ -19,7 +19,7 @@ use exonum::storage::Fork;
 
 use CRYPTOCURRENCY_SERVICE_ID;
 use schema::CurrencySchema;
-
+use wallet::Detail;
 /// Error codes emitted by wallet transactions during execution.
 #[derive(Debug, Fail)]
 #[repr(u8)]
@@ -67,11 +67,26 @@ transactions! {
             amount:  u64,
             seed:    u64,
         }
+        
+        struct TransferDetails {
+            from:    &PublicKey,
+            to:      &PublicKey,
+            name_of_type: u8,
+            count:   u64,
+            seed:    u64,
+        }
 
         /// Issue `amount` of the currency to the `wallet`.
         struct Issue {
             pub_key:  &PublicKey,
             amount:  u64,
+            seed:    u64,
+        }
+        
+        /// Issue `amount` of the currency to the `wallet`.
+        struct IssueDetail {
+            pub_key:  &PublicKey,
+            name_of_type: u8,
             seed:    u64,
         }
 
@@ -82,6 +97,46 @@ transactions! {
         }
     }
 }
+
+impl Transaction for TransferDetails {
+    fn verify(&self) -> bool {
+        self.verify_signature(self.from())
+    }
+
+    fn execute(&self, fork: &mut Fork) -> ExecutionResult {
+        let mut schema = CurrencySchema::new(fork);
+
+        let from = self.from();
+        let to = self.to();
+        let hash = self.hash();
+        let name_of_type = self.name_of_type();
+        let count = self.count();
+
+        let sender = schema.wallet(from).ok_or(Error::SenderNotFound)?;
+
+        let receiver = schema.wallet(to).ok_or(Error::ReceiverNotFound)?;
+
+        let sender_details = sender.details();
+
+        let index: Option<usize> = sender_details.iter().position(|v| v.name_of_type() == name_of_type);
+		match index {
+		    Some(index) => {
+					let detail = sender_details[index].clone();
+                    let count_sender = detail.count();
+					if count_sender < count {
+                        Err(Error::InsufficientCurrencyAmount)?
+                    }
+				},
+				None => Err(Error::InsufficientCurrencyAmount)?
+			}
+
+        schema.decrease_detail_count(sender, count, name_of_type, &hash);
+        schema.increase_detail_count(receiver, count, name_of_type, &hash);
+
+        Ok(())
+    }
+}
+
 
 impl Transaction for Transfer {
     fn verify(&self) -> bool {
@@ -110,6 +165,77 @@ impl Transaction for Transfer {
         Ok(())
     }
 }
+
+impl Transaction for IssueDetail {
+    fn verify(&self) -> bool {
+        self.verify_signature(self.pub_key())
+    }
+
+    fn execute(&self, fork: &mut Fork) -> ExecutionResult {
+        let mut schema = CurrencySchema::new(fork);
+        let pub_key = self.pub_key();
+        let hash = self.hash();
+        let name_of_type = self.name_of_type();
+        let mut count_create = 0;
+
+        if let Some(wallet) = schema.wallet(pub_key) {
+			
+			let our_details = wallet.details();
+            let our_develop = wallet.develop();
+
+            let index: Option<usize> = our_develop.iter().position(|v| v.name_of_type() == name_of_type);
+		    match index {
+                Some(index) => {
+					let detail = our_develop[index].clone();
+                    count_create = detail.count();
+				},
+				None => Err(Error::InsufficientCurrencyAmount)?
+			}
+			if name_of_type > 3 { /********************* Простые детали *******************/
+                schema.increase_detail_count(wallet, count_create, name_of_type, &hash);
+            }
+            else if name_of_type == 0 { /********************* Собираем самолет *******************/
+				
+				let mut req_details = vec![];
+				req_details.push(Detail::new(1, 2));
+				req_details.push(Detail::new(2, 3));
+				req_details.push(Detail::new(3, 1));
+		        schema.create_composite_detail(wallet, 0, req_details, &hash);   
+			}
+			else if name_of_type == 1 { /********************* Собираем двигатель *******************/
+				
+				let mut req_details = vec![];
+				req_details.push(Detail::new(4, 1));
+				req_details.push(Detail::new(5, 1));
+		        schema.create_composite_detail(wallet, 1, req_details, &hash);   
+			}
+			else if name_of_type == 2 { /********************* Собираем шасси *******************/
+				
+				let mut req_details = vec![];
+				req_details.push(Detail::new(6, 1));
+				req_details.push(Detail::new(7, 5));
+		        schema.create_composite_detail(wallet, 2, req_details, &hash);   
+			}
+			else if name_of_type == 3 { /********************* Собираем корпус *******************/
+				
+				let mut req_details = vec![];
+				req_details.push(Detail::new(8, 2));
+				req_details.push(Detail::new(9, 10));
+				req_details.push(Detail::new(10, 1));
+		        schema.create_composite_detail(wallet, 3, req_details, &hash);   
+			}
+			
+			
+			
+				    
+            Ok(())
+        } else {
+            Err(Error::ReceiverNotFound)?
+        }
+    }
+}
+
+
 
 impl Transaction for Issue {
     fn verify(&self) -> bool {

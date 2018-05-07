@@ -1,0 +1,64 @@
+consensus_public_key = "e07f517ab47c7793749e190759b3aaa83645715e20ab140d5009ceab1625426f"
+consensus_secret_key = "d729c637b84ec8dfa4b4bf28153388b191241e5a7cb55d5e2eda7a4a13974384e07f517ab47c7793749e190759b3aaa83645715e20ab140d5009ceab1625426f"
+external_address = "127.0.0.1:6331"
+listen_address = "0.0.0.0:6331"
+peers = ["127.0.0.1:6334", "127.0.0.1:6332", "127.0.0.1:6333", "127.0.0.1:6331"]
+service_public_key = "d6c5320d5008c70db051932f629abf96f1755e26268c37f3f104de014f908d10"
+service_secret_key = "29b6a95c0ba088a4ca5e0c903926f40beddefe7ef5ad833f0063cc418ef26f5bd6c5320d5008c70db051932f629abf96f1755e26268c37f3f104de014f908d10"
+
+[api]
+enable_blockchain_explorer = true
+private_api_address = "0.0.0.0:8091"
+public_api_address = "0.0.0.0:8200"
+state_update_timeout = 10000
+
+[database]
+create_if_missing = true
+[[genesis.validator_keys]]
+consensus_key = "241766491bebf8e983182980e45ffd3d938bb9791b21e70c7c44d2b9e68a61da"
+service_key = "361c125d0b0bdf1b57c392dff1c01e53c3eaa33a2d81c7d8cbc79f5fa67bb655"
+
+[[genesis.validator_keys]]
+consensus_key = "369309f67c01e4d541be1c954597897cb7211245a003d124c54de652b2b53fab"
+service_key = "7ccb87d89988693511bc9871b4d00592559ea598c883d08a1d8065e6d34e3a36"
+
+[[genesis.validator_keys]]
+consensus_key = "817b5811ca4bcdfda32beb1ee0906b259634428ae39a5447570bacab406c3883"
+service_key = "f90d82b5a5fef5f630ac8f3ed8b156d6eb73e022fe301faa2e03e5301ef04ed8"
+
+[[genesis.validator_keys]]
+consensus_key = "e07f517ab47c7793749e190759b3aaa83645715e20ab140d5009ceab1625426f"
+service_key = "d6c5320d5008c70db051932f629abf96f1755e26268c37f3f104de014f908d10"
+
+[genesis.consensus]
+max_message_len = 1048576
+peers_timeout = 10000
+round_timeout = 3000
+status_timeout = 5000
+txs_block_limit = 1000
+
+[genesis.consensus.timeout_adjuster]
+timeout = 500
+type = "Constant"
+
+[mempool]
+tx_pool_capacity = 100000
+
+[mempool.events_pool_capacity]
+api_requests_capacity = 1024
+internal_events_capacity = 128
+network_events_capacity = 512
+network_requests_capacity = 512
+
+[network]
+max_incoming_connections = 128
+max_outgoing_connections = 128
+tcp_connect_max_retries = 10
+tcp_connect_retry_timeout = 15000
+tcp_nodelay = true
+
+[services_configs]
+
+[whitelist]
+whitelist_enabled = false
+whitelisted_peers = []
